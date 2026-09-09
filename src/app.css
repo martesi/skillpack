@@ -1,0 +1,15 @@
+body {
+  margin: 0;
+}
+
+main {
+  padding-block: 3rem;
+}
+
+header {
+  margin-bottom: 2rem;
+}
+
+section {
+  margin-top: 2rem;
+}
