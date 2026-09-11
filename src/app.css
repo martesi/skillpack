@@ -10,6 +10,50 @@ header {
   margin-bottom: 2rem;
 }
 
+header p,
+.section-heading small {
+  color: var(--pico-muted-color);
+}
+
 section {
   margin-top: 2rem;
+}
+
+.section-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.section-heading h2 {
+  margin-bottom: 0.125rem;
+}
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+.select-column {
+  width: 3rem;
+  text-align: center;
+}
+
+table input[type='checkbox'] {
+  margin: 0;
+}
+
+code {
+  white-space: nowrap;
+}
+
+.selection-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.selection-actions button {
+  margin: 0;
 }
