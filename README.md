@@ -2,7 +2,7 @@
 
 Static Svelte PWA for portable agent skill registries.
 
-A registry is a GitHub repository with skills under `skills/<name>/`. Skillpack loads registries directly from GitHub in the browser, caches successful responses locally, and lets the user select skills.
+A registry is a GitHub repository containing one or more `SKILL.md` files. Skillpack follows the same bounded discovery shape as the `skills` CLI, also recognizing APM's `.apm/skills/` layout, then caches successful responses locally and lets the user select skills.
 
 ## Development
 

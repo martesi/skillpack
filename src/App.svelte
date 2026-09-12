@@ -1,20 +1,13 @@
 <script lang="ts">
 import { z } from 'zod'
 import { buildSkillZip, type SkillSource } from './lib/export'
+import { discoverRegistrySkills } from './lib/registry'
 
-const defaultRegistry = 'martesi/arca'
 const registryPattern = /^[\w.-]+\/[\w.-]+$/
 const cacheMaxAge = 60 * 60 * 1000
 const registriesKey = 'skillpack:registries'
 const selectedKey = 'skillpack:selected'
 const stringArray = z.array(z.string())
-const githubContents = z.array(
-  z.object({
-    name: z.string(),
-    path: z.string(),
-    type: z.string(),
-  }),
-)
 
 interface Skill {
   registry: string
@@ -30,7 +23,7 @@ const cachedRegistry = z.object({
 type CachedRegistry = z.infer<typeof cachedRegistry>
 
 let registry = $state('')
-let registries = $state(readStringArray(registriesKey, [defaultRegistry]))
+let registries = $state(readStringArray(registriesKey))
 let skills = $state<Skill[]>([])
 let selected = $state(readStringArray(selectedKey))
 let error = $state<string | null>(null)
@@ -91,21 +84,13 @@ async function fetchRegistry(value: string): Promise<Skill[]> {
   const cached = readCache(value)
   if (cached && Date.now() - cached.savedAt < cacheMaxAge) return withRegistry(value, cached.skills)
 
-  const response = await fetch(`https://api.github.com/repos/${value}/contents/skills`, {
-    headers: { Accept: 'application/vnd.github+json' },
-  })
-  if (!response.ok) {
+  let nextSkills: CachedRegistry['skills']
+  try {
+    nextSkills = await discoverRegistrySkills(value)
+  } catch (cause) {
     if (cached) return withRegistry(value, cached.skills)
-    throw new Error(`GitHub returned ${response.status} for ${value}`)
+    throw cause
   }
-
-  const contents = githubContents.safeParse(await response.json())
-  if (!contents.success) throw contents.error
-
-  const nextSkills = contents.data
-    .filter((entry) => entry.type === 'dir')
-    .map(({ name, path }) => ({ name, path }))
-    .sort((a, b) => a.name.localeCompare(b.name))
 
   localStorage.setItem(cacheKey(value), JSON.stringify({ savedAt: Date.now(), skills: nextSkills }))
   return withRegistry(value, nextSkills)

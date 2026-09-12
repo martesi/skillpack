@@ -8,8 +8,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "check": "svelte-check --tsconfig ./tsconfig.app.json && tsc -p tsconfig.node.json",
-    "test:e2e": "bun test e2e/smoke.test.ts",
-    "test:integration": "bun test test/export.test.ts"
+    "test:e2e": "bun run build && bun test e2e/smoke.test.ts",
+    "test:integration": "bun test test/*.test.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.12",

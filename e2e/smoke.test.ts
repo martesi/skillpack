@@ -41,10 +41,13 @@ test('persists multiple registries and selections in one table', async () => {
     ],
     { stdout: 'ignore', stderr: 'ignore' },
   )
-  const server = Bun.spawn(['bun', 'run', 'dev', '--', '--host', '127.0.0.1', '--port', String(port), '--strictPort'], {
-    stdout: 'ignore',
-    stderr: 'inherit',
-  })
+  const server = Bun.spawn(
+    ['bun', 'run', 'preview', '--', '--host', '127.0.0.1', '--port', String(port), '--strictPort'],
+    {
+      stdout: 'ignore',
+      stderr: 'inherit',
+    },
+  )
 
   try {
     await waitForServer()
@@ -58,9 +61,11 @@ test('persists multiple registries and selections in one table', async () => {
     }
 
     browser('open', baseUrl)
+    expect(browser('get', 'count', 'tbody tr')).toBe('0')
     browser(
       'eval',
       `
+      localStorage.setItem('skillpack:registries', JSON.stringify(['martesi/arca']));
       localStorage.setItem('skillpack:registry:martesi/arca', JSON.stringify({
         savedAt: Date.now(),
         skills: [{ name: 'arca-index', path: 'skills/arca-index' }],
