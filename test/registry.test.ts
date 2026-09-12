@@ -1,7 +1,15 @@
 import { expect, test } from 'bun:test'
-import { discoverRegistrySkills, findSkillMdPaths } from '../src/lib/registry'
+import { discoverRegistrySkills, findSkillMdPaths, normalizeRegistry } from '../src/lib/registry'
 
 const blob = (path: string) => ({ path, type: 'blob' })
+
+test('normalizes GitHub repository inputs', () => {
+  expect(normalizeRegistry('owner/repo')).toBe('owner/repo')
+  expect(normalizeRegistry('https://github.com/owner/repo')).toBe('owner/repo')
+  expect(normalizeRegistry('https://github.com/owner/repo.git/')).toBe('owner/repo')
+  expect(normalizeRegistry('https://github.com/owner/repo/tree/main')).toBe('owner/repo')
+  expect(normalizeRegistry('https://example.com/owner/repo')).toBeNull()
+})
 
 test('matches skills CLI priority discovery and APM skill containers', () => {
   expect(

@@ -5,6 +5,7 @@ const githubTree = z.object({
   truncated: z.boolean(),
   tree: z.array(z.object({ path: z.string(), type: z.string() })),
 })
+const registryName = z.string().regex(/^[\w.-]+\/[\w.-]+$/)
 
 const ignoredDirectories = new Set(['node_modules', '.git', 'dist', 'build', '__pycache__'])
 const skillContainerDepth = 3
@@ -55,6 +56,25 @@ interface GithubTreeEntry {
 export interface RegistrySkill {
   name: string
   path: string
+}
+
+export function normalizeRegistry(input: string): string | null {
+  const direct = registryName.safeParse(input.trim())
+  if (direct.success) return direct.data
+
+  try {
+    const url = new URL(input.trim())
+    if (url.protocol !== 'https:' && url.protocol !== 'http:') return null
+    if (url.hostname !== 'github.com' && url.hostname !== 'www.github.com') return null
+
+    const [owner, rawRepo] = url.pathname.split('/').filter(Boolean)
+    if (!owner || !rawRepo) return null
+    const repo = rawRepo.replace(/\.git$/, '')
+    const normalized = registryName.safeParse(`${owner}/${repo}`)
+    return normalized.success ? normalized.data : null
+  } catch {
+    return null
+  }
 }
 
 export async function discoverRegistrySkills(registry: string): Promise<RegistrySkill[]> {

@@ -1,9 +1,8 @@
 <script lang="ts">
 import { z } from 'zod'
 import { buildSkillZip, type SkillSource } from './lib/export'
-import { discoverRegistrySkills } from './lib/registry'
+import { discoverRegistrySkills, normalizeRegistry } from './lib/registry'
 
-const registryPattern = /^[\w.-]+\/[\w.-]+$/
 const cacheMaxAge = 60 * 60 * 1000
 const registriesKey = 'skillpack:registries'
 const selectedKey = 'skillpack:selected'
@@ -52,11 +51,11 @@ async function loadSavedRegistries() {
 }
 
 async function addRegistry() {
-  const nextRegistry = registry.trim()
+  const nextRegistry = normalizeRegistry(registry)
   error = null
 
-  if (!registryPattern.test(nextRegistry)) {
-    error = 'Registry must use the owner/repo format.'
+  if (!nextRegistry) {
+    error = 'Registry must be owner/repo or a GitHub repository URL.'
     return
   }
   if (registries.includes(nextRegistry)) {
@@ -198,7 +197,7 @@ function toggleSkill(skill: Skill, checked: boolean) {
 
   <form aria-label="Add registry" onsubmit={(event) => { event.preventDefault(); void addRegistry() }}>
     <fieldset>
-      <input aria-label="Registry" placeholder="owner/repo" bind:value={registry} autocomplete="off" />
+      <input aria-label="Registry" placeholder="owner/repo or GitHub URL" bind:value={registry} autocomplete="off" />
       <button type="submit" aria-busy={loading} disabled={loading}>Add registry</button>
     </fieldset>
   </form>

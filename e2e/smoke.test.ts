@@ -81,7 +81,7 @@ test('persists multiple registries and selections in one table', async () => {
     expect(browser('get', 'count', 'tbody tr')).toBe('1')
 
     browser('check', 'input[aria-label="Select martesi/arca/arca-index"]')
-    browser('fill', 'input[aria-label="Registry"]', 'openai/skills')
+    browser('fill', 'input[aria-label="Registry"]', 'https://github.com/openai/skills')
     browser('click', 'button[type="submit"]')
     browser('wait', 'tr[data-registry="openai/skills"]')
     expect(browser('get', 'count', 'tbody tr')).toBe('2')
