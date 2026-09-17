@@ -6,13 +6,8 @@
       system = "x86_64-linux";
       pkgs = llm-agents.inputs.nixpkgs.legacyPackages.${system};
       chromium = "${pkgs.chromium}/bin/chromium";
-      devShell = pkgs.mkShell {
-        packages = [
-          pkgs.bun
-          pkgs.chromium
-          llm-agents.packages.${system}.agent-browser
-        ];
-
+      e2eShell = pkgs.mkShell {
+        packages = [ pkgs.bun pkgs.chromium llm-agents.packages.${system}.agent-browser ];
         AGENT_BROWSER_EXECUTABLE_PATH = chromium;
         BUN_CHROME_PATH = chromium;
         FONTCONFIG_FILE = pkgs.makeFontsConf {
@@ -21,8 +16,8 @@
       };
     in {
       devShells.${system} = {
-        default = devShell;
-        e2e = devShell;
+        default = pkgs.mkShell { packages = [ pkgs.bun ]; };
+        e2e = e2eShell;
       };
     };
 }

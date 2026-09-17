@@ -14,6 +14,12 @@ export interface SkillSource {
   paths: string[]
 }
 
+export interface IndividualSkillSource {
+  registry: string
+  name: string
+  path: string
+}
+
 export async function buildSkillZip(sources: SkillSource[]) {
   const entries = (
     await Promise.all(sources.flatMap(({ registry, paths }) => paths.map((path) => fetchSkillFiles(registry, path))))
@@ -26,6 +32,44 @@ export async function buildSkillZip(sources: SkillSource[]) {
   }
 
   return zipSync(files)
+}
+
+export async function buildIndividualSkillZips(skills: IndividualSkillSource[]) {
+  const archiveNames = uniqueArchiveNames(skills)
+  const archives = await Promise.all(
+    skills.map(async (skill, index) => {
+      const files = Object.fromEntries(
+        (await fetchSkillFiles(skill.registry, skill.path)).map(([path, contents]) => [
+          relativeSkillPath(path, skill.path),
+          contents,
+        ]),
+      )
+      return [archiveNames[index], zipSync(files)] as const
+    }),
+  )
+
+  return zipSync(Object.fromEntries(archives))
+}
+
+function uniqueArchiveNames(skills: IndividualSkillSource[]) {
+  const used = new Set<string>()
+
+  return skills.map((skill) => {
+    const base = skill.name.replaceAll(/[^a-zA-Z0-9._-]+/g, '-') || 'skill'
+    let name = `${base}.zip`
+    let suffix = 2
+    while (used.has(name)) {
+      name = `${base}-${suffix}.zip`
+      suffix += 1
+    }
+    used.add(name)
+    return name
+  })
+}
+
+function relativeSkillPath(path: string, skillPath: string) {
+  if (!skillPath) return path
+  return path.slice(skillPath.length + 1)
 }
 
 async function fetchSkillFiles(registry: string, path: string): Promise<[string, Uint8Array][]> {

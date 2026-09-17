@@ -1,11 +1,10 @@
 <script lang="ts">
 import { z } from 'zod'
-import { buildSkillZip, type SkillSource } from './lib/export'
+import { buildIndividualSkillZips, buildSkillZip, type SkillSource } from './lib/export'
 import { discoverRegistrySkills, normalizeRegistry } from './lib/registry'
 
 const cacheMaxAge = 60 * 60 * 1000
 const registriesKey = 'skillpack:registries'
-const selectedKey = 'skillpack:selected'
 const stringArray = z.array(z.string())
 
 interface Skill {
@@ -24,7 +23,8 @@ type CachedRegistry = z.infer<typeof cachedRegistry>
 let registry = $state('')
 let registries = $state(readStringArray(registriesKey))
 let skills = $state<Skill[]>([])
-let selected = $state(readStringArray(selectedKey))
+let selected = $state<string[]>([])
+let exportMode = $state<'pack' | 'individual'>('pack')
 let error = $state<string | null>(null)
 let loading = $state(false)
 let exporting = $state(false)
@@ -101,13 +101,21 @@ async function exportSelected() {
   error = null
   exporting = true
   try {
-    downloadZip(await buildSkillZip(selectedSources()))
+    const contents =
+      exportMode === 'pack'
+        ? await buildSkillZip(selectedSources())
+        : await buildIndividualSkillZips(selectedSkills())
+    downloadZip(contents, exportMode === 'pack' ? 'skillpack.zip' : 'skillpack-individual.zip')
   } catch (cause) {
     console.error('export:zip', cause)
     error = exportError(cause)
   } finally {
     exporting = false
   }
+}
+
+function selectedSkills() {
+  return skills.filter((skill) => selected.includes(skillId(skill)))
 }
 
 function selectedSources(): SkillSource[] {
@@ -121,11 +129,11 @@ function selectedSources(): SkillSource[] {
     .filter(({ paths }) => paths.length > 0)
 }
 
-function downloadZip(contents: Uint8Array) {
+function downloadZip(contents: Uint8Array, filename: string) {
   const url = URL.createObjectURL(new Blob([new Uint8Array(contents)], { type: 'application/zip' }))
   const link = document.createElement('a')
   link.href = url
-  link.download = 'skillpack.zip'
+  link.download = filename
   link.click()
   URL.revokeObjectURL(url)
 }
@@ -170,56 +178,66 @@ function skillId(skill: Skill) {
 function pruneSelection() {
   const available = new Set(skills.map(skillId))
   selected = selected.filter((id) => available.has(id))
-  saveSelection()
-}
-
-function saveSelection() {
-  localStorage.setItem(selectedKey, JSON.stringify(selected))
 }
 
 function toggleAll(checked: boolean) {
   selected = checked ? skills.map(skillId) : []
-  saveSelection()
 }
 
 function toggleSkill(skill: Skill, checked: boolean) {
   const id = skillId(skill)
   selected = checked ? [...selected, id] : selected.filter((item) => item !== id)
-  saveSelection()
 }
 </script>
 
 <main class="container">
-  <header>
+  <header class="hero">
+    <small class="eyebrow">Portable agent skills</small>
     <h1>Skillpack</h1>
-    <p>Collect skills from GitHub registries and build one portable skill pack.</p>
+    <p>Collect skills from GitHub registries, choose exactly what travels, then export the shape ChatGPT needs.</p>
   </header>
 
-  <form aria-label="Add registry" onsubmit={(event) => { event.preventDefault(); void addRegistry() }}>
-    <fieldset>
-      <input aria-label="Registry" placeholder="owner/repo or GitHub URL" bind:value={registry} autocomplete="off" />
-      <button type="submit" aria-busy={loading} disabled={loading}>Add registry</button>
-    </fieldset>
-  </form>
+  <article class="registry-panel">
+    <form aria-label="Add registry" onsubmit={(event) => { event.preventDefault(); void addRegistry() }}>
+      <label for="registry-input">
+        <strong>Add a registry</strong>
+        <small>GitHub repository URL or <code>owner/repo</code></small>
+      </label>
+      <div class="registry-controls">
+        <input id="registry-input" aria-label="Registry" placeholder="github.com/openai/skills" bind:value={registry} autocomplete="off" />
+        <button type="submit" aria-busy={loading} disabled={loading}>Add registry</button>
+      </div>
+    </form>
+  </article>
 
   {#if error}
     <p role="alert">{error}</p>
   {/if}
 
   {#if skills.length > 0}
-    <section aria-labelledby="skills-title">
+    <section class="skills-panel" aria-labelledby="skills-title">
       <div class="section-heading">
         <div>
           <h2 id="skills-title">Skills</h2>
           <small>{registries.length} registries · {skills.length} found</small>
         </div>
         <div class="selection-actions">
-          <strong>{selected.length} selected</strong>
+          <span class="selection-count"><strong>{selected.length}</strong> selected</span>
+          <fieldset class="export-mode" aria-label="Export packaging">
+            <label>
+              <input type="radio" name="export-mode" value="pack" bind:group={exportMode} />
+              <span>One pack</span>
+            </label>
+            <label>
+              <input type="radio" name="export-mode" value="individual" bind:group={exportMode} />
+              <span>Per-skill ZIPs</span>
+            </label>
+          </fieldset>
           <button type="button" onclick={() => void exportSelected()} disabled={selected.length === 0 || exporting} aria-busy={exporting}>Export ZIP</button>
         </div>
       </div>
 
-      <div class="table-wrap">
+      <div class="table-wrap" data-empty-selection={selected.length === 0}>
         <table>
           <thead>
             <tr>
