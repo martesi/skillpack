@@ -2,8 +2,9 @@ import { z } from 'zod'
 
 const githubRepository = z.object({ default_branch: z.string() })
 const githubTree = z.object({
+  sha: z.string(),
   truncated: z.boolean(),
-  tree: z.array(z.object({ path: z.string(), type: z.string() })),
+  tree: z.array(z.object({ path: z.string(), type: z.string(), sha: z.string() })),
 })
 const registryName = z.string().regex(/^[\w.-]+\/[\w.-]+$/)
 
@@ -51,11 +52,19 @@ const priorityPrefixes = [
 interface GithubTreeEntry {
   path: string
   type: string
+  sha?: string
 }
 
 export interface RegistrySkill {
   name: string
+  description: string
   path: string
+  fingerprint: string
+}
+
+export interface RegistryDiscovery {
+  branch: string
+  skills: RegistrySkill[]
 }
 
 export function normalizeRegistry(input: string): string | null {
@@ -77,34 +86,60 @@ export function normalizeRegistry(input: string): string | null {
   }
 }
 
-export async function discoverRegistrySkills(registry: string): Promise<RegistrySkill[]> {
+export async function discoverRegistry(registry: string): Promise<RegistryDiscovery> {
   const repository = githubRepository.parse(await fetchGithub(`https://api.github.com/repos/${registry}`, registry))
-  const tree = githubTree.parse(
-    await fetchGithub(
-      `https://api.github.com/repos/${registry}/git/trees/${encodeURIComponent(repository.default_branch)}?recursive=1`,
-      registry,
-    ),
-  )
-
-  if (tree.truncated) throw new Error(`GitHub returned a truncated tree for ${registry}`)
+  const tree = await fetchRegistryTree(registry, repository.default_branch)
 
   const skills = await Promise.all(
     findSkillMdPaths(tree.tree).map(async (skillMdPath) => {
+      const path = skillPath(skillMdPath)
       const content = await fetchText(
         `https://raw.githubusercontent.com/${registry}/${encodeURIComponent(repository.default_branch)}/${encodePath(skillMdPath)}`,
         registry,
       )
-      const name = skillName(content)
-      if (!name) return null
+      const metadata = skillMetadata(content)
+      const fingerprint = skillFingerprint(tree, path)
+      if (!metadata || !fingerprint) return null
 
       return {
-        name,
-        path: skillMdPath.replace(/\/?skill\.md$/i, ''),
+        ...metadata,
+        path,
+        fingerprint,
       }
     }),
   )
 
-  return skills
+  return {
+    branch: repository.default_branch,
+    skills: skills
+      .filter((skill): skill is RegistrySkill => skill !== null)
+      .sort((a, b) => a.name.localeCompare(b.name) || a.path.localeCompare(b.path)),
+  }
+}
+
+export async function discoverRegistrySkills(registry: string): Promise<RegistrySkill[]> {
+  return (await discoverRegistry(registry)).skills
+}
+
+export async function refreshRegistrySkills(
+  registry: string,
+  branch: string,
+  previousSkills: RegistrySkill[],
+): Promise<RegistrySkill[]> {
+  const tree = await fetchRegistryTree(registry, branch)
+  const previousByPath = new Map(previousSkills.map((skill) => [skill.path, skill]))
+
+  return findSkillMdPaths(tree.tree)
+    .map(skillPath)
+    .map((path) => {
+      const fingerprint = skillFingerprint(tree, path)
+      if (!fingerprint) return null
+
+      const previous = previousByPath.get(path)
+      return previous
+        ? { ...previous, fingerprint }
+        : { name: inferredSkillName(path), description: '', path, fingerprint }
+    })
     .filter((skill): skill is RegistrySkill => skill !== null)
     .sort((a, b) => a.name.localeCompare(b.name) || a.path.localeCompare(b.path))
 }
@@ -160,17 +195,46 @@ function hasAncestorSkill(prefix: string, directories: string[], skillMdPaths: S
   })
 }
 
-function skillName(content: string): string | null {
+function skillMetadata(content: string): Pick<RegistrySkill, 'name' | 'description'> | null {
   const frontmatter = content.match(/^---[ \t]*\r?\n([\s\S]*?)\r?\n---(?:[ \t]*\r?\n|$)/)?.[1]
-  if (!frontmatter || !/^description:\s*\S/m.test(frontmatter)) return null
+  if (!frontmatter) return null
 
   const rawName = frontmatter.match(/^name:\s*(.+?)\s*$/m)?.[1]
-  if (!rawName) return null
+  const rawDescription = frontmatter.match(/^description:\s*(.+?)\s*$/m)?.[1]
+  if (!rawName || !rawDescription) return null
 
-  if ((rawName.startsWith('"') && rawName.endsWith('"')) || (rawName.startsWith("'") && rawName.endsWith("'"))) {
-    return rawName.slice(1, -1)
+  return { name: unquote(rawName), description: unquote(rawDescription) }
+}
+
+function unquote(value: string) {
+  if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
+    return value.slice(1, -1)
   }
-  return rawName
+  return value
+}
+
+function skillPath(skillMdPath: string) {
+  return skillMdPath.replace(/\/?skill\.md$/i, '')
+}
+
+function inferredSkillName(path: string) {
+  return path.split('/').filter(Boolean).at(-1) ?? 'skill'
+}
+
+function skillFingerprint(tree: z.infer<typeof githubTree>, path: string) {
+  if (!path) return tree.sha
+  return tree.tree.find((entry) => entry.type === 'tree' && entry.path === path)?.sha ?? null
+}
+
+async function fetchRegistryTree(registry: string, branch: string) {
+  const tree = githubTree.parse(
+    await fetchGithub(
+      `https://api.github.com/repos/${registry}/git/trees/${encodeURIComponent(branch)}?recursive=1`,
+      registry,
+    ),
+  )
+  if (tree.truncated) throw new Error(`GitHub returned a truncated tree for ${registry}`)
+  return tree
 }
 
 function encodePath(path: string) {
