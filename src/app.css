@@ -60,7 +60,7 @@ select {
 
 .secondary-action,
 .text-action,
-.add-registry button,
+.settings-form button,
 .registry-list button {
   width: auto;
   margin: 0;
@@ -156,18 +156,17 @@ select {
   background: var(--builder-green);
 }
 
-.add-registry {
+.settings-form {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
   gap: 6px;
   margin-top: 12px;
 }
 
-.add-registry :is(input, button) {
+.settings-form :is(input, select, button) {
   margin: 0;
 }
 
-.add-registry input {
+.settings-form :is(input, select) {
   min-width: 0;
   height: 38px;
   padding: 0 10px;
@@ -177,10 +176,53 @@ select {
   font-size: 0.78rem;
 }
 
-.add-registry button {
+.settings-form button {
   padding: 0 10px;
   border-radius: 9px;
   font-size: 0.78rem;
+}
+
+.registry-row,
+.credential-row,
+.form-actions,
+.row-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.registry-row > :first-child,
+.credential-row > :first-child {
+  flex: 1;
+}
+
+.row-action {
+  width: auto;
+  margin: 0;
+  padding: 0.35rem 0.5rem;
+  border: 0;
+  background: transparent;
+  color: var(--builder-blue);
+  box-shadow: none;
+  font-size: 0.72rem;
+}
+
+.credentials-manager {
+  margin-top: 16px;
+}
+
+.credentials-manager summary {
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.field-label,
+.credential-list {
+  display: grid;
+  gap: 6px;
+  margin-top: 10px;
+  font-size: 0.74rem;
 }
 
 .skills-main {

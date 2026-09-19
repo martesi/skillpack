@@ -1,10 +1,12 @@
 import { zipSync } from 'fflate'
 import { z } from 'zod'
+import { fetchGithubBlob, githubHeaders } from './github'
 
 const githubContents = z.array(
   z.object({
     path: z.string(),
     type: z.string(),
+    sha: z.string().optional(),
     download_url: z.string().nullable().optional(),
   }),
 )
@@ -12,17 +14,23 @@ const githubContents = z.array(
 export interface SkillSource {
   registry: string
   paths: string[]
+  token?: string
 }
 
 export interface IndividualSkillSource {
   registry: string
   name: string
   path: string
+  token?: string
 }
 
 export async function buildSkillZip(sources: SkillSource[]) {
   const entries = (
-    await Promise.all(sources.flatMap(({ registry, paths }) => paths.map((path) => fetchSkillFiles(registry, path))))
+    await Promise.all(
+      sources.flatMap(({ registry, paths, token }) =>
+        paths.map((path) => fetchSkillFiles(registry, path, token)),
+      ),
+    )
   ).flat()
   const files: Record<string, Uint8Array> = {}
 
@@ -39,7 +47,7 @@ export async function buildIndividualSkillZips(skills: IndividualSkillSource[]) 
   const archives = await Promise.all(
     skills.map(async (skill, index) => {
       const files = Object.fromEntries(
-        (await fetchSkillFiles(skill.registry, skill.path)).map(([path, contents]) => [
+        (await fetchSkillFiles(skill.registry, skill.path, skill.token)).map(([path, contents]) => [
           relativeSkillPath(path, skill.path),
           contents,
         ]),
@@ -72,24 +80,27 @@ function relativeSkillPath(path: string, skillPath: string) {
   return path.slice(skillPath.length + 1)
 }
 
-async function fetchSkillFiles(registry: string, path: string): Promise<[string, Uint8Array][]> {
+async function fetchSkillFiles(registry: string, path: string, token?: string): Promise<[string, Uint8Array][]> {
   const response = await fetch(`https://api.github.com/repos/${registry}/contents/${path}`, {
-    headers: { Accept: 'application/vnd.github+json' },
+    headers: githubHeaders(token),
   })
   if (!response.ok) throw new Error(`GitHub returned ${response.status} for ${path}`)
 
   const parsed = githubContents.safeParse(await response.json())
   if (!parsed.success) throw parsed.error
 
-  return (await Promise.all(parsed.data.map((entry) => fetchEntry(registry, entry)))).flat()
+  return (await Promise.all(parsed.data.map((entry) => fetchEntry(registry, entry, token)))).flat()
 }
 
 async function fetchEntry(
   registry: string,
   entry: z.infer<typeof githubContents>[number],
+  token?: string,
 ): Promise<[string, Uint8Array][]> {
-  if (entry.type === 'dir') return fetchSkillFiles(registry, entry.path)
-  if (entry.type !== 'file' || !entry.download_url) return []
+  if (entry.type === 'dir') return fetchSkillFiles(registry, entry.path, token)
+  if (entry.type !== 'file') return []
+  if (token && entry.sha) return [[entry.path, await fetchGithubBlob(registry, entry.sha, token)]]
+  if (!entry.download_url) return []
 
   const response = await fetch(entry.download_url)
   if (!response.ok) throw new Error(`GitHub returned ${response.status} for ${entry.path}`)

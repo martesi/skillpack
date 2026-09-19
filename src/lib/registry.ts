@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { fetchGithubBlob, githubHeaders } from './github'
 
 const githubRepository = z.object({ default_branch: z.string() })
 const githubTree = z.object({
@@ -86,17 +87,20 @@ export function normalizeRegistry(input: string): string | null {
   }
 }
 
-export async function discoverRegistry(registry: string): Promise<RegistryDiscovery> {
-  const repository = githubRepository.parse(await fetchGithub(`https://api.github.com/repos/${registry}`, registry))
-  const tree = await fetchRegistryTree(registry, repository.default_branch)
+export async function discoverRegistry(registry: string, token?: string): Promise<RegistryDiscovery> {
+  const repository = githubRepository.parse(await fetchGithub(`https://api.github.com/repos/${registry}`, registry, token))
+  const tree = await fetchRegistryTree(registry, repository.default_branch, token)
 
   const skills = await Promise.all(
     findSkillMdPaths(tree.tree).map(async (skillMdPath) => {
       const path = skillPath(skillMdPath)
-      const content = await fetchText(
-        `https://raw.githubusercontent.com/${registry}/${encodeURIComponent(repository.default_branch)}/${encodePath(skillMdPath)}`,
-        registry,
-      )
+      const content = token
+        ? await fetchPrivateText(registry, tree, skillMdPath, token)
+        : await fetchText(
+            `https://raw.githubusercontent.com/${registry}/${encodeURIComponent(repository.default_branch)}/${encodePath(skillMdPath)}`,
+            registry,
+          )
+      if (content === null) return null
       const metadata = skillMetadata(content)
       const fingerprint = skillFingerprint(tree, path)
       if (!metadata || !fingerprint) return null
@@ -117,16 +121,17 @@ export async function discoverRegistry(registry: string): Promise<RegistryDiscov
   }
 }
 
-export async function discoverRegistrySkills(registry: string): Promise<RegistrySkill[]> {
-  return (await discoverRegistry(registry)).skills
+export async function discoverRegistrySkills(registry: string, token?: string): Promise<RegistrySkill[]> {
+  return (await discoverRegistry(registry, token)).skills
 }
 
 export async function refreshRegistrySkills(
   registry: string,
   branch: string,
   previousSkills: RegistrySkill[],
+  token?: string,
 ): Promise<RegistrySkill[]> {
-  const tree = await fetchRegistryTree(registry, branch)
+  const tree = await fetchRegistryTree(registry, branch, token)
   const previousByPath = new Map(previousSkills.map((skill) => [skill.path, skill]))
 
   return findSkillMdPaths(tree.tree)
@@ -226,11 +231,12 @@ function skillFingerprint(tree: z.infer<typeof githubTree>, path: string) {
   return tree.tree.find((entry) => entry.type === 'tree' && entry.path === path)?.sha ?? null
 }
 
-async function fetchRegistryTree(registry: string, branch: string) {
+async function fetchRegistryTree(registry: string, branch: string, token?: string) {
   const tree = githubTree.parse(
     await fetchGithub(
       `https://api.github.com/repos/${registry}/git/trees/${encodeURIComponent(branch)}?recursive=1`,
       registry,
+      token,
     ),
   )
   if (tree.truncated) throw new Error(`GitHub returned a truncated tree for ${registry}`)
@@ -241,10 +247,21 @@ function encodePath(path: string) {
   return path.split('/').map(encodeURIComponent).join('/')
 }
 
-async function fetchGithub(url: string, registry: string): Promise<unknown> {
-  const response = await fetch(url, { headers: { Accept: 'application/vnd.github+json' } })
+async function fetchGithub(url: string, registry: string, token?: string): Promise<unknown> {
+  const response = await fetch(url, { headers: githubHeaders(token) })
   if (!response.ok) throw new Error(`GitHub returned ${response.status} for ${registry}`)
   return response.json()
+}
+
+async function fetchPrivateText(
+  registry: string,
+  tree: z.infer<typeof githubTree>,
+  path: string,
+  token: string,
+) {
+  const entry = tree.tree.find((candidate) => candidate.type === 'blob' && candidate.path === path)
+  if (!entry) return null
+  return new TextDecoder().decode(await fetchGithubBlob(registry, entry.sha, token))
 }
 
 async function fetchText(url: string, registry: string) {
@@ -252,3 +269,4 @@ async function fetchText(url: string, registry: string) {
   if (!response.ok) throw new Error(`GitHub returned ${response.status} for ${registry}`)
   return response.text()
 }
+
