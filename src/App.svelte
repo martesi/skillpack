@@ -393,6 +393,14 @@ function selectUpdates() {
   selected = skills.filter(isUpdate).map(skillId)
 }
 
+function chooseStatusFilter(value: StatusFilter, event: MouseEvent) {
+  event.preventDefault()
+  statusFilter = value
+  if (event.currentTarget instanceof HTMLElement) {
+    event.currentTarget.closest('details')?.removeAttribute('open')
+  }
+}
+
 function removedSkills() {
   if (!lastExport) return []
   const current = new Set(skills.map(skillId))
@@ -424,6 +432,10 @@ function toggleVisible(checked: boolean) {
 
 function selectedSkills() {
   return skills.filter((skill) => selected.includes(skillId(skill)))
+}
+
+function selectedSourceCount() {
+  return new Set(selectedSkills().map((skill) => skill.registry)).size
 }
 
 function selectedSources(): SkillSource[] {
@@ -696,10 +708,17 @@ function pruneSelection() {
         </div>
         <div class="search-row">
           <input aria-label="Search skills" placeholder="Search saved registries" bind:value={search} />
-          <select aria-label="Filter skills" bind:value={statusFilter}>
-            <option value="all">All skills</option>
-            <option value="updates">Updates only</option>
-          </select>
+          <details class="dropdown filter-dropdown">
+            <summary aria-haspopup="listbox">{statusFilter === 'all' ? 'All skills' : 'Updates only'}</summary>
+            <ul role="listbox" aria-label="Filter skills">
+              <li>
+                <a href="#" role="option" aria-selected={statusFilter === 'all'} onclick={(event) => chooseStatusFilter('all', event)}>All skills</a>
+              </li>
+              <li>
+                <a href="#" role="option" aria-selected={statusFilter === 'updates'} onclick={(event) => chooseStatusFilter('updates', event)}>Updates only</a>
+              </li>
+            </ul>
+          </details>
         </div>
       </div>
 
@@ -754,6 +773,15 @@ function pruneSelection() {
 
     <aside class="export-panel">
       <div class="panel-label">Export</div>
+      <h2>Pack summary</h2>
+      <p>A portable archive generated from the selected skills.</p>
+
+      <div class="summary-card">
+        <div><span>Selected</span><strong>{selected.length} skills</strong></div>
+        <div><span>Sources</span><strong>{selectedSourceCount()} registries</strong></div>
+        <div><span>Changes</span><strong>{updateCount()}</strong></div>
+      </div>
+
       <fieldset class="packaging">
         <legend>Packaging</legend>
         <label class:active={exportMode === 'pack'}>
@@ -767,9 +795,12 @@ function pruneSelection() {
       </fieldset>
 
       <button class="export-button" type="button" onclick={() => void exportSelected()} disabled={selected.length === 0 || exporting} aria-busy={exporting}>
-        {exportMode === 'pack' ? 'Export skillpack.zip' : 'Export individual ZIPs'}
+        Export
       </button>
 
+      <p class="panel-hint">
+        Registry URLs, credential choices, encrypted credentials, and the last-export snapshot persist locally.
+      </p>
     </aside>
   </div>
 </div>
