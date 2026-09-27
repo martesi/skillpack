@@ -614,6 +614,7 @@ function pruneSelection() {
           <input aria-label="Registry URL" bind:value={editRegistryUrl} autocomplete="off" />
           <SelectDropdown
             ariaLabel="Registry edit credential"
+            name="registry-edit-credential"
             value={editRegistryCredential}
             options={[
               { value: globalCredential, label: 'Use global credential' },
@@ -632,6 +633,7 @@ function pruneSelection() {
         <input aria-label="Registry" placeholder="owner/repo" bind:value={registry} autocomplete="off" />
         <SelectDropdown
           ariaLabel="Registry credential"
+          name="registry-add-credential"
           value={addCredentialChoice}
           options={[
             { value: globalCredential, label: 'Use global credential' },
@@ -653,6 +655,7 @@ function pruneSelection() {
           Global API credential
           <SelectDropdown
             ariaLabel="Global credential"
+            name="global-credential"
             value={credentialSettings.globalCredentialId ?? ''}
             options={[
               { value: '', label: 'None' },
@@ -708,7 +711,7 @@ function pruneSelection() {
           <input aria-label="Search skills" placeholder="Search saved registries" bind:value={search} />
           <SelectDropdown
             ariaLabel="Filter skills"
-            size="large"
+            name="status-filter"
             value={statusFilter}
             options={[
               { value: 'all', label: 'All skills' },
