@@ -166,6 +166,7 @@ input {
 .settings-form,
 .field-label {
   --pico-block-spacing-vertical: 0;
+  --pico-spacing: 0;
   --pico-border-radius: 9px;
   --pico-font-size: 0.78rem;
   --pico-form-element-spacing-horizontal: 0.5rem;
@@ -189,6 +190,7 @@ input {
 }
 
 .settings-form button {
+  min-height: calc(1rem * var(--pico-line-height) + var(--pico-form-element-spacing-vertical) * 2 + var(--pico-border-width) * 2);
   font-size: inherit;
 }
 
@@ -296,6 +298,7 @@ input {
 
 .search-row {
   --pico-block-spacing-vertical: 0;
+  --pico-spacing: 0;
   --pico-border-radius: 9px;
   --pico-font-size: 0.82rem;
   --pico-form-element-spacing-horizontal: 0.7rem;
