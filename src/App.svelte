@@ -394,7 +394,7 @@ function selectUpdates() {
   selected = skills.filter(isUpdate).map(skillId)
 }
 
-status filter helperfunction removedSkills() {
+function removedSkills() {
   if (!lastExport) return []
   const current = new Set(skills.map(skillId))
   const saved = new Set(registries.map(registryName))
