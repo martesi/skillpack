@@ -177,7 +177,7 @@ select {
 }
 
 .settings-form button {
-  padding: 0 10px;
+  padding: 0.5rem 0.75rem;
   border-radius: 9px;
   font-size: 0.78rem;
 }
@@ -205,6 +205,15 @@ select {
   color: var(--builder-blue);
   box-shadow: none;
   font-size: 0.72rem;
+}
+
+.icon-action {
+  width: 2rem;
+  padding: 0.35rem 0;
+  font-size: 1.1rem;
+  line-height: 1;
+  text-align: center;
+  white-space: nowrap;
 }
 
 .credentials-manager {
@@ -285,7 +294,7 @@ select {
 
 .search-row input {
   min-width: 0;
-  flex: 1;
+  flex: 2 1 0;
   padding: 0.55rem 0.7rem;
   border: 1px solid #d0d0ca;
   border-radius: 9px;
@@ -294,7 +303,8 @@ select {
 }
 
 .search-row select {
-  width: 138px;
+  width: auto;
+  flex: 1 1 0;
   padding: 0.55rem 2rem 0.55rem 0.7rem;
   border: 1px solid var(--builder-line);
   border-radius: 9px;
@@ -336,6 +346,8 @@ select {
 
 .skill-item {
   display: grid;
+  width: 100%;
+  box-sizing: border-box;
   grid-template-columns: 28px minmax(0, 1fr) auto;
   gap: 12px;
   align-items: center;
@@ -482,7 +494,11 @@ select {
 }
 
 .packaging input {
-  margin-top: 2px;
+  width: 17px;
+  height: 17px;
+  margin: 2px 0 0;
+  accent-color: var(--builder-blue);
+  flex: 0 0 auto;
 }
 
 .packaging span,
