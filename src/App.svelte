@@ -712,10 +712,10 @@ function pruneSelection() {
             <summary aria-haspopup="listbox">{statusFilter === 'all' ? 'All skills' : 'Updates only'}</summary>
             <ul role="listbox" aria-label="Filter skills">
               <li>
-                <a href="#" role="option" aria-selected={statusFilter === 'all'} onclick={(event) => chooseStatusFilter('all', event)}>All skills</a>
+                <button type="button" role="option" aria-selected={statusFilter === 'all'} onclick={(event) => chooseStatusFilter('all', event)}>All skills</button>
               </li>
               <li>
-                <a href="#" role="option" aria-selected={statusFilter === 'updates'} onclick={(event) => chooseStatusFilter('updates', event)}>Updates only</a>
+                <button type="button" role="option" aria-selected={statusFilter === 'updates'} onclick={(event) => chooseStatusFilter('updates', event)}>Updates only</button>
               </li>
             </ul>
           </details>
