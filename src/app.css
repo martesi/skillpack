@@ -127,8 +127,16 @@ select {
   box-shadow: none;
 }
 
-.registry-list button.active {
+.registry-row {
+  border-radius: 9px;
+}
+
+.registry-row.active {
   background: #e8e8e3;
+}
+
+.registry-row.active > button.active {
+  background: transparent;
 }
 
 .registry-list strong,
@@ -252,8 +260,7 @@ select {
 
 .title-row,
 .search-row,
-.skill-title,
-.summary-card > div {
+.skill-title {
   display: flex;
   align-items: center;
 }
@@ -289,7 +296,9 @@ select {
 }
 
 .search-row :is(input, select) {
+  height: 48px;
   margin: 0;
+  box-sizing: border-box;
 }
 
 .search-row input {
@@ -437,35 +446,6 @@ select {
   text-align: center;
 }
 
-.export-panel h2 {
-  margin: 4px 0;
-  font-size: 1.1rem;
-}
-
-.export-panel > p {
-  margin: 0 0 18px;
-  color: var(--builder-muted);
-  font-size: 0.78rem;
-  line-height: 1.5;
-}
-
-.summary-card {
-  padding: 13px;
-  border: 1px solid var(--builder-line);
-  border-radius: 12px;
-  background: white;
-}
-
-.summary-card > div {
-  justify-content: space-between;
-  padding: 7px 0;
-  font-size: 0.78rem;
-}
-
-.summary-card > div + div {
-  border-top: 1px solid var(--builder-soft-line);
-}
-
 .packaging {
   margin: 16px 0 0;
   padding: 0;
@@ -527,13 +507,6 @@ select {
   background: var(--builder-blue);
   color: white;
   font-weight: 750;
-}
-
-.export-panel .panel-hint {
-  margin-top: 12px;
-  color: #65655f;
-  font-size: 0.68rem;
-  line-height: 1.45;
 }
 
 @media (max-width: 980px) {
