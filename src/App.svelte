@@ -603,7 +603,7 @@ function pruneSelection() {
               <span class="status-dot"></span>
               <span><strong>{name}</strong><small>{registryCount(name)} skills · {credentialLabel(source)}</small></span>
             </button>
-            <button class="row-action" type="button" aria-label={`Edit ${name}`} onclick={() => startRegistryEdit(source)}>Edit</button>
+            <button class="row-action icon-action" type="button" aria-label={`Edit ${name}`} title={`Edit ${name}`} onclick={() => startRegistryEdit(source)}>⋯</button>
           </div>
         {/each}
       </nav>
