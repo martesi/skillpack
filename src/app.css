@@ -337,7 +337,7 @@ select {
   min-width: 100%;
 }
 
-.filter-dropdown button[role='option'] {
+.filter-dropdown > ul button {
   display: block;
   width: 100%;
   margin: 0;
@@ -349,7 +349,7 @@ select {
   text-align: left;
 }
 
-.filter-dropdown button[aria-selected='true'] {
+.filter-dropdown > ul button[aria-pressed='true'] {
   background: #e8e8e3;
 }
 
