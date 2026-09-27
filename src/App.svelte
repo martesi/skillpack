@@ -1,5 +1,6 @@
 <script lang="ts">
 import { z } from 'zod'
+import SelectDropdown from './lib/SelectDropdown.svelte'
 import {
   buildIndividualSkillZips,
   buildSkillZip,
@@ -393,15 +394,7 @@ function selectUpdates() {
   selected = skills.filter(isUpdate).map(skillId)
 }
 
-function chooseStatusFilter(value: StatusFilter, event: MouseEvent) {
-  event.preventDefault()
-  statusFilter = value
-  if (event.currentTarget instanceof HTMLElement) {
-    event.currentTarget.closest('details')?.removeAttribute('open')
-  }
-}
-
-function removedSkills() {
+status filter helperfunction removedSkills() {
   if (!lastExport) return []
   const current = new Set(skills.map(skillId))
   const saved = new Set(registries.map(registryName))
@@ -619,12 +612,15 @@ function pruneSelection() {
       {#if editingRegistry}
         <form class="settings-form" aria-label="Edit registry" onsubmit={(event) => { event.preventDefault(); void saveRegistryEdit() }}>
           <input aria-label="Registry URL" bind:value={editRegistryUrl} autocomplete="off" />
-          <select aria-label="Registry edit credential" bind:value={editRegistryCredential}>
-            <option value={globalCredential}>Use global credential</option>
-            {#each credentialSettings.credentials as credential}
-              <option value={credential.id}>{credential.name}</option>
-            {/each}
-          </select>
+          <SelectDropdown
+            ariaLabel="Registry edit credential"
+            value={editRegistryCredential}
+            options={[
+              { value: globalCredential, label: 'Use global credential' },
+              ...credentialSettings.credentials.map((credential) => ({ value: credential.id, label: credential.name })),
+            ]}
+            onValueChange={(value) => editRegistryCredential = value}
+          />
           <div class="form-actions">
             <button type="submit">Save</button>
             <button type="button" class="secondary" onclick={() => editingRegistry = null}>Cancel</button>
@@ -634,13 +630,16 @@ function pruneSelection() {
 
       <form class="settings-form" aria-label="Add registry" onsubmit={(event) => { event.preventDefault(); void addRegistry() }}>
         <input aria-label="Registry" placeholder="owner/repo" bind:value={registry} autocomplete="off" />
-        <select aria-label="Registry credential" bind:value={addCredentialChoice}>
-          <option value={globalCredential}>Use global credential</option>
-          {#each credentialSettings.credentials as credential}
-            <option value={credential.id}>{credential.name}</option>
-          {/each}
-          <option value={newCredential}>Add credential…</option>
-        </select>
+        <SelectDropdown
+          ariaLabel="Registry credential"
+          value={addCredentialChoice}
+          options={[
+            { value: globalCredential, label: 'Use global credential' },
+            ...credentialSettings.credentials.map((credential) => ({ value: credential.id, label: credential.name })),
+            { value: newCredential, label: 'Add credential…' },
+          ]}
+          onValueChange={(value) => addCredentialChoice = value}
+        />
         {#if addCredentialChoice === newCredential}
           <input aria-label="New credential name" placeholder="Credential name" bind:value={addCredentialName} autocomplete="off" />
           <input aria-label="New credential token" type="password" placeholder="Fine-grained token" bind:value={addCredentialToken} autocomplete="off" />
@@ -652,16 +651,15 @@ function pruneSelection() {
         <summary>Credentials <span>{credentialSettings.credentials.length}</span></summary>
         <label class="field-label">
           Global API credential
-          <select
-            aria-label="Global credential"
+          <SelectDropdown
+            ariaLabel="Global credential"
             value={credentialSettings.globalCredentialId ?? ''}
-            onchange={(event) => void setGlobalCredential(event.currentTarget.value)}
-          >
-            <option value="">None</option>
-            {#each credentialSettings.credentials as credential}
-              <option value={credential.id}>{credential.name}</option>
-            {/each}
-          </select>
+            options={[
+              { value: '', label: 'None' },
+              ...credentialSettings.credentials.map((credential) => ({ value: credential.id, label: credential.name })),
+            ]}
+            onValueChange={(value) => void setGlobalCredential(value)}
+          />
         </label>
 
         <div class="credential-list">
@@ -708,17 +706,18 @@ function pruneSelection() {
         </div>
         <div class="search-row">
           <input aria-label="Search skills" placeholder="Search saved registries" bind:value={search} />
-          <details class="dropdown filter-dropdown">
-            <summary aria-haspopup="menu">{statusFilter === 'all' ? 'All skills' : 'Updates only'}</summary>
-            <ul aria-label="Filter skills">
-              <li>
-                <button type="button" aria-pressed={statusFilter === 'all'} onclick={(event) => chooseStatusFilter('all', event)}>All skills</button>
-              </li>
-              <li>
-                <button type="button" aria-pressed={statusFilter === 'updates'} onclick={(event) => chooseStatusFilter('updates', event)}>Updates only</button>
-              </li>
-            </ul>
-          </details>
+          <SelectDropdown
+            ariaLabel="Filter skills"
+            size="large"
+            value={statusFilter}
+            options={[
+              { value: 'all', label: 'All skills' },
+              { value: 'updates', label: 'Updates only' },
+            ]}
+            onValueChange={(value) => {
+              if (value === 'all' || value === 'updates') statusFilter = value
+            }}
+          />
         </div>
       </div>
 
