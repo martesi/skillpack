@@ -317,6 +317,11 @@ input {
   flex: 1 1 0;
   min-width: 0;
 }
+
+.search-row > details.dropdown,
+.settings-form > details.dropdown {
+  margin: 0;
+}
 .error {
   margin: 12px 22px 0;
   padding: 10px 12px;
