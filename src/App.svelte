@@ -406,10 +406,6 @@ function updateCount() {
   return skills.filter(isUpdate).length + removedSkills().length
 }
 
-function selectedSourceCount() {
-  return new Set(selectedSkills().map((skill) => skill.registry)).size
-}
-
 function registryCount(value: string) {
   return skills.filter((skill) => skill.registry === value).length
 }
@@ -598,7 +594,7 @@ function pruneSelection() {
         </button>
         {#each registries as source}
           {@const name = registryName(source)}
-          <div class="registry-row">
+          <div class="registry-row" class:active={activeRegistry === name}>
             <button class:active={activeRegistry === name} type="button" onclick={() => activeRegistry = name} aria-pressed={activeRegistry === name}>
               <span class="status-dot"></span>
               <span><strong>{name}</strong><small>{registryCount(name)} skills · {credentialLabel(source)}</small></span>
@@ -758,15 +754,6 @@ function pruneSelection() {
 
     <aside class="export-panel">
       <div class="panel-label">Export</div>
-      <h2>Pack summary</h2>
-      <p>A portable archive generated from the selected skills.</p>
-
-      <div class="summary-card">
-        <div><span>Selected</span><strong>{selected.length} skills</strong></div>
-        <div><span>Sources</span><strong>{selectedSourceCount()} registries</strong></div>
-        <div><span>Changes</span><strong>{updateCount()}</strong></div>
-      </div>
-
       <fieldset class="packaging">
         <legend>Packaging</legend>
         <label class:active={exportMode === 'pack'}>
@@ -783,9 +770,6 @@ function pruneSelection() {
         {exportMode === 'pack' ? 'Export skillpack.zip' : 'Export individual ZIPs'}
       </button>
 
-      <p class="panel-hint">
-        Registry URLs, credential choices, encrypted credentials, and the last-export snapshot persist locally.
-      </p>
     </aside>
   </div>
 </div>
