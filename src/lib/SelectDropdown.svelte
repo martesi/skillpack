@@ -8,7 +8,7 @@ interface Props {
   value: string
   options: DropdownOption[]
   ariaLabel: string
-  size?: 'compact' | 'large'
+  name: string
   onValueChange: (value: string) => void
 }
 
@@ -16,32 +16,33 @@ let {
   value,
   options,
   ariaLabel,
-  size = 'compact',
+  name,
   onValueChange,
 }: Props = $props()
 
-function choose(option: DropdownOption, event: MouseEvent) {
-  event.preventDefault()
-  onValueChange(option.value)
-  if (event.currentTarget instanceof HTMLElement) {
+function choose(value: string, event: Event) {
+  onValueChange(value)
+  if (event.currentTarget instanceof HTMLInputElement) {
     event.currentTarget.closest('details')?.removeAttribute('open')
   }
 }
 </script>
 
-<details class={`dropdown select-dropdown ${size}`}>
-  <summary aria-haspopup="menu">{options.find((option) => option.value === value)?.label ?? ''}</summary>
+<details class="dropdown">
+  <summary>{options.find((option) => option.value === value)?.label ?? ''}</summary>
   <ul aria-label={ariaLabel}>
     {#each options as option (option.value)}
       <li>
-        <button
-          type="button"
-          aria-label={option.label}
-          aria-pressed={option.value === value}
-          onclick={(event) => choose(option, event)}
-        >
+        <label>
+          <input
+            type="radio"
+            {name}
+            value={option.value}
+            checked={option.value === value}
+            onchange={(event) => choose(option.value, event)}
+          />
           {option.label}
-        </button>
+        </label>
       </li>
     {/each}
   </ul>
