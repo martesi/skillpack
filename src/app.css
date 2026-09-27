@@ -163,10 +163,21 @@ input {
   background: var(--builder-green);
 }
 
+.settings-form,
+.field-label {
+  --pico-block-spacing-vertical: 0;
+  --pico-border-radius: 9px;
+  --pico-font-size: 0.78rem;
+  --pico-form-element-spacing-horizontal: 0.5rem;
+  --pico-form-element-spacing-vertical: 0.2875rem;
+  --pico-line-height: 1.2;
+}
+
 .settings-form {
   display: grid;
   gap: 6px;
   margin-top: 12px;
+  font-size: var(--pico-font-size);
 }
 
 .settings-form :is(input, button) {
@@ -175,18 +186,10 @@ input {
 
 .settings-form input {
   min-width: 0;
-  height: 38px;
-  padding: 0 10px;
-  border: 1px dashed #c8c8c1;
-  border-radius: 9px;
-  background: transparent;
-  font-size: 0.78rem;
 }
 
 .settings-form button {
-  padding: 0.5rem 0.75rem;
-  border-radius: 9px;
-  font-size: 0.78rem;
+  font-size: inherit;
 }
 
 .registry-row,
@@ -292,17 +295,24 @@ input {
 }
 
 .search-row {
+  --pico-block-spacing-vertical: 0;
+  --pico-border-radius: 9px;
+  --pico-font-size: 0.82rem;
+  --pico-form-element-spacing-horizontal: 0.7rem;
+  --pico-form-element-spacing-vertical: 0.5375rem;
+  --pico-line-height: 1.2;
   gap: 8px;
 }
 
 .search-row input {
-  height: 48px;
+  min-width: 0;
+  flex: 2 1 0;
   margin: 0;
-  box-sizing: border-box;
 }
 
-.search-row .search-row > details.dropdown {
+.search-row > details.dropdown {
   flex: 1 1 0;
+  min-width: 0;
 }
 .error {
   margin: 12px 22px 0;
