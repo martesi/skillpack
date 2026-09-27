@@ -709,13 +709,13 @@ function pruneSelection() {
         <div class="search-row">
           <input aria-label="Search skills" placeholder="Search saved registries" bind:value={search} />
           <details class="dropdown filter-dropdown">
-            <summary aria-haspopup="listbox">{statusFilter === 'all' ? 'All skills' : 'Updates only'}</summary>
-            <ul role="listbox" aria-label="Filter skills">
+            <summary aria-haspopup="menu">{statusFilter === 'all' ? 'All skills' : 'Updates only'}</summary>
+            <ul aria-label="Filter skills">
               <li>
-                <button type="button" role="option" aria-selected={statusFilter === 'all'} onclick={(event) => chooseStatusFilter('all', event)}>All skills</button>
+                <button type="button" aria-pressed={statusFilter === 'all'} onclick={(event) => chooseStatusFilter('all', event)}>All skills</button>
               </li>
               <li>
-                <button type="button" role="option" aria-selected={statusFilter === 'updates'} onclick={(event) => chooseStatusFilter('updates', event)}>Updates only</button>
+                <button type="button" aria-pressed={statusFilter === 'updates'} onclick={(event) => chooseStatusFilter('updates', event)}>Updates only</button>
               </li>
             </ul>
           </details>
