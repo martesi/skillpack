@@ -24,8 +24,7 @@ body {
 }
 
 button,
-input,
-select {
+input {
   font: inherit;
 }
 
@@ -170,11 +169,11 @@ select {
   margin-top: 12px;
 }
 
-.settings-form :is(input, select, button) {
+.settings-form :is(input, button) {
   margin: 0;
 }
 
-.settings-form :is(input, select) {
+.settings-form input {
   min-width: 0;
   height: 38px;
   padding: 0 10px;
@@ -302,75 +301,9 @@ select {
   box-sizing: border-box;
 }
 
-.search-row .select-dropdown {
+.search-row .search-row > details.dropdown {
   flex: 1 1 0;
 }
-
-.search-row input {
-  min-width: 0;
-  flex: 2 1 0;
-  padding: 0.55rem 0.7rem;
-  border: 1px solid #d0d0ca;
-  border-radius: 9px;
-  background: white;
-  font-size: 0.82rem;
-}
-
-.select-dropdown {
-  min-width: 0;
-  margin: 0;
-}
-
-.settings-form .select-dropdown,
-.field-label .select-dropdown {
-  width: 100%;
-}
-
-.select-dropdown.dropdown > summary:not([role]) {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0 2rem 0 10px;
-  border: 1px solid #c8c8c1;
-  border-radius: 9px;
-  background: transparent;
-  color: #242421;
-  font-size: 0.78rem;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.select-dropdown.compact.dropdown > summary:not([role]) {
-  height: 38px;
-}
-
-.select-dropdown.large.dropdown > summary:not([role]) {
-  height: 48px;
-  padding: 0.55rem 2rem 0.55rem 0.7rem;
-  border-color: #d0d0ca;
-  background: white;
-}
-
-.select-dropdown > ul {
-  min-width: 100%;
-}
-
-.select-dropdown > ul button {
-  display: block;
-  width: 100%;
-  margin: 0;
-  padding: 0.55rem 0.7rem;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  color: #242421;
-  text-align: left;
-}
-
-.select-dropdown > ul button[aria-pressed='true'] {
-  background: #e8e8e3;
-}
-
 .error {
   margin: 12px 22px 0;
   padding: 10px 12px;
