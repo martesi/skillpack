@@ -1,6 +1,6 @@
 import { afterEach, expect, test } from 'bun:test'
 import { strFromU8, unzipSync } from 'fflate'
-import { buildIndividualSkillZips, buildSkillZip } from '../src/lib/export'
+import { buildIndividualSkillZips, buildPluginZip, buildSkillZip } from '../src/lib/export'
 
 const originalFetch = globalThis.fetch
 
@@ -90,4 +90,47 @@ test('wraps one ChatGPT-ready ZIP per selected skill in one outer ZIP', async ()
   expect(Object.keys(beta)).toEqual(['SKILL.md'])
   expect(strFromU8(alpha['SKILL.md'])).toBe('# Alpha')
   expect(strFromU8(beta['SKILL.md'])).toBe('# Beta')
+})
+
+test('builds a portable plugin ZIP containing selected skills', async () => {
+  globalThis.fetch = async (input) => {
+    const url = String(input)
+
+    if (url.endsWith('/repos/owner/one/contents/skills/alpha')) {
+      return Response.json([
+        { path: 'skills/alpha/SKILL.md', type: 'file', download_url: 'https://raw.test/alpha.md' },
+        { path: 'skills/alpha/references', type: 'dir' },
+      ])
+    }
+    if (url.endsWith('/repos/owner/one/contents/skills/alpha/references')) {
+      return Response.json([
+        { path: 'skills/alpha/references/note.md', type: 'file', download_url: 'https://raw.test/note.md' },
+      ])
+    }
+    if (url.endsWith('/repos/owner/two/contents/skills/beta')) {
+      return Response.json([{ path: 'skills/beta/SKILL.md', type: 'file', download_url: 'https://raw.test/beta.md' }])
+    }
+    if (url === 'https://raw.test/alpha.md') return new Response('# Alpha')
+    if (url === 'https://raw.test/beta.md') return new Response('# Beta')
+    if (url === 'https://raw.test/note.md') return new Response('note')
+
+    throw new Error(`Unexpected fetch: ${url}`)
+  }
+
+  const archive = unzipSync(
+    await buildPluginZip([
+      { registry: 'owner/one', name: 'alpha', path: 'skills/alpha' },
+      { registry: 'owner/two', name: 'beta', path: 'skills/beta' },
+    ]),
+  )
+  const manifest = JSON.parse(strFromU8(archive['plugin.json']))
+
+  expect(manifest.name).toBe('skillpack')
+  expect(manifest.$schema).toBe('https://agent-plugins.org/schemas/1.0.0/plugin.schema.json')
+  expect(Object.keys(archive).sort()).toEqual([
+    'plugin.json',
+    'skills/alpha/SKILL.md',
+    'skills/alpha/references/note.md',
+    'skills/beta/SKILL.md',
+  ])
 })
