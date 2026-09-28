@@ -3,6 +3,7 @@ import { z } from 'zod'
 import SelectDropdown from './lib/SelectDropdown.svelte'
 import {
   buildIndividualSkillZips,
+  buildPluginZip,
   buildSkillZip,
   type IndividualSkillSource,
   type SkillSource,
@@ -58,7 +59,7 @@ const exportSnapshot = z.object({
 type SavedRegistry = z.infer<typeof savedRegistrySchema>
 type CachedRegistry = z.infer<typeof cachedRegistry>
 type ExportSnapshot = z.infer<typeof exportSnapshot>
-type ExportMode = 'pack' | 'individual'
+type ExportMode = 'pack' | 'individual' | 'plugin'
 type StatusFilter = 'all' | 'updates'
 
 interface Skill extends RegistrySkill {
@@ -264,11 +265,13 @@ async function exportSelected() {
   error = null
   exporting = true
   try {
-    const contents =
-      exportMode === 'pack'
-        ? await buildSkillZip(selectedSources())
-        : await buildIndividualSkillZips(selectedIndividualSources())
-    downloadZip(contents, exportMode === 'pack' ? 'skillpack.zip' : 'skillpack-individual.zip')
+    const contents = exportMode === 'pack'
+      ? await buildSkillZip(selectedSources())
+      : exportMode === 'individual'
+        ? await buildIndividualSkillZips(selectedIndividualSources())
+        : await buildPluginZip(selectedIndividualSources())
+    const filename = exportMode === 'individual' ? 'skillpack-individual.zip' : 'skillpack.zip'
+    downloadZip(contents, filename)
     saveExportSnapshot()
   } catch (cause) {
     console.error('export:zip', cause)
@@ -793,6 +796,10 @@ function pruneSelection() {
         <label class:active={exportMode === 'individual'}>
           <input type="radio" name="export-mode" value="individual" bind:group={exportMode} />
           <span><strong>Per-skill ZIPs</strong><small>ChatGPT-ready ZIPs inside one outer archive.</small></span>
+        </label>
+        <label class:active={exportMode === 'plugin'}>
+          <input type="radio" name="export-mode" value="plugin" bind:group={exportMode} />
+          <span><strong>ChatGPT plugin</strong><small>One uploadable plugin ZIP containing all selected skills.</small></span>
         </label>
       </fieldset>
 
