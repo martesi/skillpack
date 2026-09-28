@@ -59,15 +59,43 @@ export async function buildIndividualSkillZips(skills: IndividualSkillSource[]) 
   return zipSync(Object.fromEntries(archives))
 }
 
+export async function buildPluginZip(skills: IndividualSkillSource[]) {
+  const directories = uniqueSkillDirectoryNames(skills)
+  const entries = await Promise.all(
+    skills.map(async (skill, index) => {
+      const files = await fetchSkillFiles(skill.registry, skill.path, skill.token)
+      return files.map(([path, contents]) => [
+        `skills/${directories[index]}/${relativeSkillPath(path, skill.path)}`,
+        contents,
+      ] as const)
+    }),
+  )
+  const manifest = {
+    $schema: 'https://agent-plugins.org/schemas/1.0.0/plugin.schema.json',
+    name: 'skillpack',
+    version: `0.0.0-${Date.now()}`,
+    description: 'Skills bundled by Skillpack.',
+  }
+
+  return zipSync({
+    'plugin.json': new TextEncoder().encode(`${JSON.stringify(manifest, null, 2)}\n`),
+    ...Object.fromEntries(entries.flat()),
+  })
+}
+
 function uniqueArchiveNames(skills: IndividualSkillSource[]) {
+  return uniqueSkillDirectoryNames(skills).map((name) => `${name}.zip`)
+}
+
+function uniqueSkillDirectoryNames(skills: IndividualSkillSource[]) {
   const used = new Set<string>()
 
   return skills.map((skill) => {
     const base = skill.name.replaceAll(/[^a-zA-Z0-9._-]+/g, '-') || 'skill'
-    let name = `${base}.zip`
+    let name = base
     let suffix = 2
     while (used.has(name)) {
-      name = `${base}-${suffix}.zip`
+      name = `${base}-${suffix}`
       suffix += 1
     }
     used.add(name)
